@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.itnoob.dao.CheckGroupDao">
+
+    <resultMap id="baseResultMap" type="com.itnoob.pojo.CheckGroup">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="code" property="code"/>
+        <result column="helpCode" property="helpCode"/>
+        <result column="sex" property="sex"/>
+        <result column="remark" property="remark"/>
+        <result column="attention" property="attention"/>
+    </resultMap>
+
+    <resultMap id="findByIdResultMap" type="com.itnoob.pojo.CheckGroup" extends="baseResultMap">
+        <!--检查组和检查项多对多关联查询-->
+        <collection property="checkItems"
+                    ofType="com.itnoob.pojo.CheckItem"
+                    column="id"
+                    select="com.itnoob.dao.CheckItemDao.findCheckItemById"
+        ></collection>
+    </resultMap>
+
+    <insert id="add" parameterType="com.itnoob.pojo.CheckGroup">
+        <!--获取新增主键-->
+        <selectKey order="AFTER" resultType="java.lang.Integer" keyProperty="id">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+
+        insert into t_checkgroup(code,name,sex,helpCode,remark,attention)
+        values
+        (#{code},#{name},#{sex},#{helpCode},#{remark},#{attention})
+    </insert>
+
+    <insert id="setCheckGroupAndCheckItem" parameterType="map">
+        insert into t_checkgroup_checkitem(checkgroup_id,checkitem_id)
+        values
+        (#{checkgroupId},#{checkitemId})
+    </insert>
+
+    <select id="findPageByCondition" parameterType="string" resultType="com.itnoob.pojo.CheckGroup">
+        SELECT * FROM t_checkgroup
+        <if test="value != null and value.length > 0">
+            WHERE code=#{value} OR name=#{value} OR helpCode=#{value}
+        </if>
+    </select>
+
+    <select id="findById" parameterType="int" resultType="com.itnoob.pojo.CheckGroup">
+        SELECT * FROM t_checkgroup WHERE id=#{id}
+    </select>
+
+    <select id="findCheckItemIdsByCheckGroupId" parameterType="int" resultType="int">
+        select checkitem_id from t_checkgroup_checkitem where checkgroup_id = #{id}
+    </select>
+
+    <delete id="deleteAssociation" parameterType="int">
+        DELETE FROM t_checkgroup_checkitem WHERE checkgroup_id=#{id}
+    </delete>
+
+    <delete id="deleteById" parameterType="int">
+        DELETE FROM t_checkgroup WHERE id=#{id}
+    </delete>
+
+    <update id="edit" parameterType="com.itnoob.pojo.CheckGroup">
+        UPDATE t_checkgroup
+        <set>
+            <if test="name!=null">
+                name=#{name},
+            </if>
+            <if test="sex!=null">
+                sex=#{sex},
+            </if>
+            <if test="code!=null">
+                code=#{code},
+            </if>
+            <if test="helpCode!=null">
+                helpCode=#{helpCode},
+            </if>
+            <if test="attention!=null">
+                attention=#{attention},
+            </if>
+            <if test="remark!=null">
+                remark=#{remark},
+            </if>
+        </set>
+        WHERE id=#{id}
+    </update>
+
+    <select id="findAll" resultType="com.itnoob.pojo.CheckGroup">
+        SELECT * FROM t_checkgroup
+    </select>
+
+    <!--查询套餐对应的检查组信息-->
+    <select id="findCheckGroupById" parameterType="int" resultMap="findByIdResultMap">
+        SELECT * FROM t_checkgroup WHERE id in
+        (SELECT checkgroup_id FROM t_setmeal_checkgroup WHERE setmeal_id=#{id})
+    </select>
+
+</mapper>
